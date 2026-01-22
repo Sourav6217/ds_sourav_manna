@@ -159,3 +159,143 @@ else:
         label="Number of Trades",
         value=f"{trade_count:,}"
     )
+
+
+# -----------------------------
+# Profit / Loss Distribution
+# -----------------------------
+st.subheader("How Trade Results Are Distributed")
+
+if len(filtered_df) > 0:
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+
+    ax.hist(
+        filtered_df["closed_pnl"],
+        bins=50
+    )
+
+    ax.set_xlabel("Profit / Loss per Trade")
+    ax.set_ylabel("Number of Trades")
+    ax.set_title(f"Trade Results During {selected_sentiment} Markets")
+
+    st.pyplot(fig)
+
+    st.caption(
+        "This chart shows how profits and losses are spread. "
+        "Greedy markets usually show wider swings — bigger wins, but also bigger losses."
+    )
+else:
+    st.warning("Not enough data to show distribution.")
+
+# -----------------------------
+# Supporting Visuals: Behavior
+# -----------------------------
+st.subheader("How Trader Behavior Changes")
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Prepare summary data
+behavior_summary = (
+    merged_df
+    .groupby("market_sentiment")
+    .agg(
+        trade_count=("closed_pnl", "count"),
+        avg_trade_size=("size_usd", "mean")
+    )
+    .reset_index()
+)
+
+col1, col2 = st.columns(2)
+
+# ---- Plot 1: Trade Count ----
+with col1:
+    fig1, ax1 = plt.subplots()
+    sns.barplot(
+        data=behavior_summary,
+        x="market_sentiment",
+        y="trade_count",
+        ax=ax1
+    )
+    ax1.set_title("Trading Activity by Market Mood")
+    ax1.set_xlabel("Market Mood")
+    ax1.set_ylabel("Number of Trades")
+    st.pyplot(fig1)
+
+# ---- Plot 2: Average Trade Size ----
+with col2:
+    fig2, ax2 = plt.subplots()
+    sns.barplot(
+        data=behavior_summary,
+        x="market_sentiment",
+        y="avg_trade_size",
+        ax=ax2
+    )
+    ax2.set_title("Average Trade Size by Market Mood")
+    ax2.set_xlabel("Market Mood")
+    ax2.set_ylabel("Average Trade Size (USD)")
+    st.pyplot(fig2)
+
+st.caption(
+    "Greedy markets usually see more trading activity and larger trade sizes, "
+    "which increases overall risk exposure."
+)
+
+# -----------------------------
+# Final Insights & Flow
+# -----------------------------
+st.subheader("How We Reached These Insights")
+
+st.markdown(
+    """
+    ### Step-by-step journey
+
+    **1. Started with raw data**  
+    We used real trading history and daily market mood (Fear vs Greed).
+
+    **2. Added market context to each trade**  
+    Every trade was matched with the market mood of that day.
+
+    **3. Observed behavior changes**  
+    We saw how traders changed their activity and trade sizes when the market mood changed.
+
+    **4. Measured outcomes**  
+    We checked how often trades lost money and what the average result looked like.
+
+    **5. Turned patterns into insights**  
+    Instead of just looking at profits, we focused on risk and consistency.
+    """
+)
+
+st.markdown(
+    """
+    ### Key indicators we focused on
+
+    • Chance of losing money  
+    • Average profit or loss per trade  
+    • Trading activity (number of trades)  
+    • Trade size as a proxy for risk  
+    """
+)
+
+st.markdown(
+    """
+    ### What this means for smarter trading
+
+    • Greedy markets increase risk faster than skill  
+    • Bigger trades do not guarantee better outcomes  
+    • Consistent traders during fearful markets are often more reliable  
+    • Managing position size is critical during optimistic market phases  
+    """
+)
+
+st.markdown(
+    """
+    ### Simple flow
+
+    **Market Mood → Trader Behavior → Risk Exposure → Trade Outcomes → Smarter Decisions**
+    """
+)
+
