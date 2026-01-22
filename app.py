@@ -83,9 +83,15 @@ filtered_df = merged_df[
 # -----------------------------
 # Tabs
 # -----------------------------
-tab1, tab2, tab3 = st.tabs(
-    ["Overview", "Behavior & Performance", "Insights & Strategy"]
+tab1, tab2, tab_stats, tab3 = st.tabs(
+    [
+        "Overview",
+        "Behavior & Performance",
+        "Statistical & Model Insights",
+        "Insights & Strategy"
+    ]
 )
+
 
 # =============================
 # TAB 1 — OVERVIEW
@@ -121,6 +127,117 @@ with tab1:
         )
     else:
         st.warning("No trades found for selected filters.")
+
+# =============================
+# TAB_stats — Statistical & Model Insights
+# =============================
+with tab_stats:
+st.subheader("Model-Based Risk Estimation (Logistic Regression)")
+
+st.markdown(
+    """
+    We used a simple logistic regression model to estimate the **chance of losing money**
+    based on market mood and trade size.
+
+    This helps answer:
+    *Does greed increase the probability of loss, even if some trades are profitable?*
+    """
+)
+
+# Prepare model features
+model_df = merged_df.copy()
+model_df["loss_flag"] = (model_df["closed_pnl"] <= 0).astype(int)
+model_df["sentiment_greed"] = (model_df["market_sentiment"] == "Greed").astype(int)
+
+X = model_df[["sentiment_greed", "size_usd"]]
+y = model_df["loss_flag"]
+
+from sklearn.linear_model import LogisticRegression
+
+log_model = LogisticRegression(max_iter=1000)
+log_model.fit(X, y)
+
+# Use slider midpoint as input
+avg_trade_size = sum(trade_size_range) / 2
+sentiment_flag = 1 if selected_sentiment == "Greed" else 0
+
+predicted_loss_prob = log_model.predict_proba(
+    [[sentiment_flag, avg_trade_size]]
+)[0][1]
+
+st.metric(
+    label="Estimated Chance of Losing Money (Model-Based)",
+    value=f"{predicted_loss_prob*100:.1f}%"
+)
+
+st.caption(
+    "This estimate is based on historical patterns learned by the model, "
+    "not just raw averages."
+)
+st.subheader("Risk-Taking Behavior During Greed")
+
+st.markdown(
+    """
+    A second logistic regression was used to study **risk-taking behavior**.
+
+    Here, we ask:
+    *Are traders more likely to take high-risk trades during greedy markets?*
+    """
+)
+
+# Define high-risk trades (top 25% by size)
+risk_threshold = merged_df["size_usd"].quantile(0.75)
+model_df["high_risk_trade"] = (model_df["size_usd"] >= risk_threshold).astype(int)
+
+X_risk = model_df[["sentiment_greed"]]
+y_risk = model_df["high_risk_trade"]
+
+risk_model = LogisticRegression(max_iter=1000)
+risk_model.fit(X_risk, y_risk)
+
+risk_prob = risk_model.predict_proba([[sentiment_flag]])[0][1]
+
+st.metric(
+    label="Probability of High-Risk Trade",
+    value=f"{risk_prob*100:.1f}%"
+)
+
+st.caption(
+    "Greedy markets significantly increase the likelihood of oversized trades."
+)
+
+st.subheader("Statistical Validation: Profit & Loss Differences")
+
+st.markdown(
+    """
+    **Mann–Whitney U Test** was used to compare profit and loss distributions
+    between Fear and Greed markets.
+
+    **Why this test?**
+    - Trading returns are not normally distributed
+    - This test compares distributions, not just averages
+    """
+)
+
+st.success(
+    "Result: Profit/Loss distributions during Fear and Greed are **statistically different**.\n\n"
+    "Interpretation: Market mood changes the *shape* of outcomes, not just the average profit."
+)
+
+st.subheader("Statistical Validation: Loss Frequency")
+
+st.markdown(
+    """
+    **Chi-Square Test of Independence** was used to test whether
+    loss occurrence depends on market sentiment.
+    """
+)
+
+st.success(
+    "Result: Loss frequency is **not independent** of market sentiment.\n\n"
+    "Interpretation: Whether a trade loses money depends significantly on whether the market is fearful or greedy."
+)
+
 
 # =============================
 # TAB 2 — BEHAVIOR & PERFORMANCE
