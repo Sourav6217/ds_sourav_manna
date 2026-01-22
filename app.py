@@ -1,7 +1,3 @@
-st.info(
-    "Note: This app loads large datasets directly from Google Drive. "
-    "Initial loading may take some time."
-)
 
 
 import streamlit as st
@@ -13,7 +9,13 @@ st.set_page_config(
     page_title="Market Mood & Trader Behavior",
     layout="wide"
 )
-
+# -----------------------------
+# Info message
+# -----------------------------
+st.info(
+    "Note: This app loads large datasets directly from Google Drive. "
+    "Initial loading may take some time."
+)
 # -----------------------------
 # Page Header
 # -----------------------------
