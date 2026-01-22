@@ -126,3 +126,36 @@ st.dataframe(
     filtered_df[["market_sentiment", "size_usd", "closed_pnl"]].head(10)
 )
 
+# -----------------------------
+# Key Metrics
+# -----------------------------
+st.subheader("What Happens Under These Conditions?")
+
+if len(filtered_df) == 0:
+    st.warning("No trades found for the selected filters.")
+else:
+    # Loss probability
+    loss_probability = (filtered_df["closed_pnl"] <= 0).mean()
+
+    # Average PnL
+    avg_pnl = filtered_df["closed_pnl"].mean()
+
+    # Trade count
+    trade_count = len(filtered_df)
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric(
+        label="Chance of Losing Money",
+        value=f"{loss_probability*100:.1f}%"
+    )
+
+    col2.metric(
+        label="Average Result per Trade",
+        value=f"${avg_pnl:,.2f}"
+    )
+
+    col3.metric(
+        label="Number of Trades",
+        value=f"{trade_count:,}"
+    )
